@@ -2,14 +2,22 @@ package net.sourceforge.squirrel_sql.client.session.mcp.ui;
 
 import java.awt.Frame;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFrame;
-
 import net.sourceforge.squirrel_sql.client.Main;
 import net.sourceforge.squirrel_sql.client.resources.SquirrelResources;
 import net.sourceforge.squirrel_sql.client.session.ISQLEntryPanel;
 import net.sourceforge.squirrel_sql.client.session.ISession;
+import net.sourceforge.squirrel_sql.client.session.SqlPanelExecutionFutureApprovalListener;
 import net.sourceforge.squirrel_sql.client.session.action.syntax.rsyntax.RSyntaxSQLEntryAreaFactory;
+import net.sourceforge.squirrel_sql.client.session.mainpanel.CancelPanelCtrl;
+import net.sourceforge.squirrel_sql.client.session.mainpanel.ErrorPanel;
+import net.sourceforge.squirrel_sql.client.session.mainpanel.ResultTab;
+import net.sourceforge.squirrel_sql.client.session.mcp.server.McpApprovalCallPreviewBuilder;
+import net.sourceforge.squirrel_sql.client.session.mcp.server.McpCall;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.McpCallExecutor;
+import net.sourceforge.squirrel_sql.client.session.mcp.server.McpExecuteQueryResult;
+import net.sourceforge.squirrel_sql.client.session.mcp.server.McpQueryExecuter;
 import net.sourceforge.squirrel_sql.client.session.parser.IParserEventsProcessorFactory;
 import net.sourceforge.squirrel_sql.client.util.codereformat.CodeReformator;
 import net.sourceforge.squirrel_sql.client.util.codereformat.CodeReformatorConfigFactory;
@@ -66,14 +74,74 @@ public class McpCallApproveCtrl
 
    private void onExecuteCall(McpCallExecutor callExecutor)
    {
-      DataSetViewerTablePanel table = callExecutor.getMcpCall().buildResultTableComponentForApproval(callExecutor);
+      if(callExecutor.getMcpCall() == McpCall.executeQuery)
+      {
+         Main.getApplication().getThreadPool().addTask(() -> executeAndDisplayQuery(callExecutor));
+      }
+      else
+      {
+         DataSetViewerTablePanel table = callExecutor.getMcpCall().buildDataSetViewerTablePanelForApproval(callExecutor);
 
+         displayDataSetViewerTablePanel(table);
+      }
+   }
+
+   private void executeAndDisplayQuery(McpCallExecutor callExecutor)
+   {
+      AtomicBoolean isQueryErrorPanelBeingDisplayed = new AtomicBoolean(false);
+
+      SqlPanelExecutionFutureApprovalListener sqlPanelExecutionFutureApprovalListener = new SqlPanelExecutionFutureApprovalListener()
+      {
+         @Override
+         public void displayCancelPanelCtrl(CancelPanelCtrl cancelPanelCtrl)
+         {
+            _mcpCallApproveDlg.displaySqlQueryExecutionUI(cancelPanelCtrl.getPanel());
+         }
+
+         @Override
+         public void displayErrorPanel(ErrorPanel errorPanel)
+         {
+            isQueryErrorPanelBeingDisplayed.set(true);
+            _mcpCallApproveDlg.displaySqlQueryExecutionUI(errorPanel);
+         }
+      };
+
+      McpExecuteQueryResult mcpExecuteQueryResult =
+            McpQueryExecuter.executeQueryForApproval(callExecutor.getSql(), callExecutor.getMcpServerContext(), sqlPanelExecutionFutureApprovalListener);
+
+      callExecutor.setCallResult(mcpExecuteQueryResult);
+
+      GUIUtils.processOnSwingEventThread(() -> {
+         if(mcpExecuteQueryResult.isUpdateMessage())
+         {
+            displayDataSetViewerTablePanel(McpApprovalCallPreviewBuilder.createDataSetViewerTablePanelOfString(McpCall.executeQuery, mcpExecuteQueryResult.getUpdateMessage()));
+         }
+         else if(mcpExecuteQueryResult.isErrorMessage())
+         {
+            if( false == isQueryErrorPanelBeingDisplayed.get() )
+            {
+               // We end up here e.g. when executing UPDATE/DELETE/INSERT was forbidden by the MCP.
+               displayDataSetViewerTablePanel(McpApprovalCallPreviewBuilder.createDataSetViewerTablePanelOfString(McpCall.executeQuery, mcpExecuteQueryResult.getErrorMessage()));
+            }
+         }
+         else
+         {
+            //mcpExecuteQueryResult.resultTab().setBorder(BorderFactory.createLineBorder(Color.red, 5));
+            mcpExecuteQueryResult.resultTab().prepareMcpApproveDisplay();
+            _mcpCallApproveDlg.displaySqlQueryExecutionUI(mcpExecuteQueryResult.resultTab());
+         }
+      });
+
+   }
+
+   private void displayDataSetViewerTablePanel(DataSetViewerTablePanel table)
+   {
       DataSetViewerFindHandler dataSetViewerFindHandler = new DataSetViewerFindHandler(table, ResultTableType.ROWS_WINDOW, new JFrame());
 
       _mcpCallApproveDlg.btnFindInResult.setEnabled(true);
       _mcpCallApproveDlg.btnFindInResult.addActionListener(e -> dataSetViewerFindHandler.toggleShowFindPanel());
 
-      _mcpCallApproveDlg.displayResult(dataSetViewerFindHandler.getComponent());
+      _mcpCallApproveDlg.displaySqlQueryExecutionUI(dataSetViewerFindHandler.getComponent());
    }
 
    private void onEditAIResponseMessage()
@@ -119,6 +187,12 @@ public class McpCallApproveCtrl
    {
       _approved = b;
       _mcpCallApproveDlg.setVisible(false);
+
+      if(_mcpCallApproveDlg.removeDisplayedSqlQueryExecutionUI() instanceof ResultTab resultTab)
+      {
+         resultTab.unprepareMcpApproveDisplay();
+         resultTab.returnToTabbedPane();
+      }
       _mcpCallApproveDlg.dispose();
 
    }

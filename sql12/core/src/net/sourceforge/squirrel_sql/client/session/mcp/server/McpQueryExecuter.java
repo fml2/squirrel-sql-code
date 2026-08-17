@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import net.sourceforge.squirrel_sql.client.session.SqlPanelExecutionFuture;
+import net.sourceforge.squirrel_sql.client.session.SqlPanelExecutionFutureApprovalListener;
 import net.sourceforge.squirrel_sql.client.session.SqlPanelExecutionResult;
 import net.sourceforge.squirrel_sql.client.session.mainpanel.sqltypecheck.SQLTypeCheck;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.jsonobjects.McpResultCell;
@@ -20,31 +21,45 @@ import net.sourceforge.squirrel_sql.fw.gui.GUIUtils;
 
 public class McpQueryExecuter
 {
-   static McpResultSet executeQuery(McpSimpleString sql, McpServerContext mcpServerContext)
+   public static McpExecuteQueryResult executeQueryForApproval(McpSimpleString sql,
+                                                               McpServerContext mcpServerContext,
+                                                               SqlPanelExecutionFutureApprovalListener sqlPanelExecutionFutureApprovalListener)
    {
-      if(mcpServerContext.getSession().getAlias().isReadOnly() && false == SQLTypeCheck.isSelectOrExplainStatement(sql.stringContent()))
+      return _executeQuery(sql, mcpServerContext, sqlPanelExecutionFutureApprovalListener);
+   }
+
+
+   public static McpExecuteQueryResult executeQuery(McpSimpleString sql, McpServerContext mcpServerContext)
+   {
+      return _executeQuery(sql, mcpServerContext, null);
+   }
+
+   private static McpExecuteQueryResult _executeQuery(McpSimpleString sql, McpServerContext mcpServerContext, SqlPanelExecutionFutureApprovalListener sqlPanelExecutionFutureApprovalListener)
+   {
+      if( mcpServerContext.getSession().getAlias().isReadOnly() && false == SQLTypeCheck.isSelectOrExplainStatement(sql.stringContent()))
       {
-         return McpResultSet.ofError("The Session's Alias allows to execute SELECT and EXPLAIN-Statements only.");
+         return McpExecuteQueryResult.ofError("The Session's Alias allows to execute SELECT and EXPLAIN-Statements only.");
       }
-      else if(mcpServerContext.getMcpUiProps().isApplyAliasesReadOnlyRules() && false == SQLTypeCheck.isSelectOrExplainStatement(sql.stringContent()))
+      else if( mcpServerContext.getMcpUiProps().isApplyAliasesReadOnlyRules() && false == SQLTypeCheck.isSelectOrExplainStatement(sql.stringContent()))
       {
-         return McpResultSet.ofError("AIs are allowed to execute SELECT and EXPLAIN-Statements only.");
+         return McpExecuteQueryResult.ofError("AIs are allowed to execute SELECT and EXPLAIN-Statements only.");
       }
 
 
-      final SqlPanelExecutionFuture sqlPanelExecutionFuture = new SqlPanelExecutionFuture();
+
+      final SqlPanelExecutionFuture sqlPanelExecutionFuture = new SqlPanelExecutionFuture(sqlPanelExecutionFutureApprovalListener);
 
       GUIUtils.processOnSwingEventThread(() -> mcpServerContext.getMcpSqlTab().getSQLPanelAPI().executeSQL(sql.stringContent(), sqlPanelExecutionFuture), false);
       SqlPanelExecutionResult executionResult = sqlPanelExecutionFuture.waitForSqlResult();
 
       if(executionResult.hasError())
       {
-         return McpResultSet.ofError(executionResult.composeErrorMessage());
+         return McpExecuteQueryResult.ofError(executionResult.composeErrorMessage());
       }
 
       if(executionResult.hasUpdateMessage())
       {
-         return McpResultSet.ofUpdateMessage(executionResult.updateMessage());
+         return McpExecuteQueryResult.ofUpdateMessage(executionResult.updateMessage());
       }
 
       //executionResult.getSqlsResultTab().setBorder(BorderFactory.createLineBorder(Color.red));
@@ -87,7 +102,10 @@ public class McpQueryExecuter
          sqlRes.add(new McpResultRow(cellsOfRow));
       }
 
-      return McpResultSet.ofResult(metaData, sqlRes, resultSetData.isResultLimitedByMaxRowsCount() ? resultSetData.currentRowCount() : null);
+      return new McpExecuteQueryResult(
+            McpResultSet.ofResult(metaData, sqlRes, resultSetData.isResultLimitedByMaxRowsCount() ? resultSetData.currentRowCount() : null),
+            executionResult.sqlResultTab()
+      );
    }
 
    private static Double getDoubleValue(Object cell)

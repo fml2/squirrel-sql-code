@@ -356,13 +356,23 @@ public class SQLResultExecutorPanel extends JPanel implements ISQLResultExecutor
    private void onDisplayErrors(final ArrayList<String> sqlExecErrorMsgs, final String lastExecutedStatement, SqlPanelExecutionFuture sqlPanelExecutionFuture)
    {
       sqlPanelExecutionFuture.setError(sqlExecErrorMsgs.get(sqlExecErrorMsgs.size() - 1), lastExecutedStatement);
-      Runnable runnable = () -> showErrorPanel(sqlExecErrorMsgs, lastExecutedStatement);
-      SwingUtilities.invokeLater(runnable);
+
+      SwingUtilities.invokeLater(() ->
+      {
+         ErrorPanel errorPanel = _resultTabFactory.createErrorPanel(sqlExecErrorMsgs, lastExecutedStatement);
+         if(sqlPanelExecutionFuture.isAddTabsToSQLPanelsResultTabbedPane())
+         {
+            showErrorPanel(errorPanel);
+         }
+         else
+         {
+            sqlPanelExecutionFuture.displayErrorPanel(errorPanel);
+         }
+      });
    }
 
-   private void showErrorPanel(ArrayList<String> sqlExecErrorMsgs, String lastExecutedStatement)
+   private void showErrorPanel(ErrorPanel errorPanel)
    {
-      ErrorPanel errorPanel = _resultTabFactory.createErrorPanel(sqlExecErrorMsgs, lastExecutedStatement);
       _tabAdder.add(s_stringMgr.getString("SQLResultExecuterPanel.ErrorTabHeader"), errorPanel);
       _tabbedExecutionsPanel.setSelectedComponent(errorPanel);
    }
@@ -721,8 +731,11 @@ public class SQLResultExecutorPanel extends JPanel implements ISQLResultExecutor
        try
        {
           ResultTab tab = _resultTabFactory.createResultTab(exInfo, dataSetUpdateableTableModel, rsds, mdds);
-          addResultsTab(tab, resultTabToReplace);
-          _tabbedExecutionsPanel.setSelectedComponent(tab);
+          if(sqlPanelExecutionFuture.isAddTabsToSQLPanelsResultTabbedPane())
+          {
+             addResultsTab(tab, resultTabToReplace);
+             _tabbedExecutionsPanel.setSelectedComponent(tab);
+          }
           sqlPanelExecutionFuture.setAddedResultTab(tab);
        }
        catch (Throwable t)
@@ -774,13 +787,21 @@ public class SQLResultExecutorPanel extends JPanel implements ISQLResultExecutor
       {
          public void run()
          {
-            _tabAdder.add(s_stringMgr.getString("SQLResultExecuterPanel.exec"),
-                    null,
-                    cancelPanelCtrl.getPanel(),
-                    s_stringMgr.getString("SQLResultExecuterPanel.cancelMsg"));
+            if(sqlPanelExecutionFuture.isAddTabsToSQLPanelsResultTabbedPane())
+            {
+               _tabAdder.add(s_stringMgr.getString("SQLResultExecuterPanel.exec"),
+                       null,
+                       cancelPanelCtrl.getPanel(),
+                       s_stringMgr.getString("SQLResultExecuterPanel.cancelMsg"));
+
+               _tabbedExecutionsPanel.setSelectedComponent(cancelPanelCtrl.getPanel());
+            }
+            else
+            {
+               sqlPanelExecutionFuture.displayCancelPanelCtrl(cancelPanelCtrl);
+            }
 
             cancelPanelCtrl.addListener(cancelPanelListener);
-            _tabbedExecutionsPanel.setSelectedComponent(cancelPanelCtrl.getPanel());
          }
       });
    }

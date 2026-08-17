@@ -103,4 +103,9 @@ public class ReRunChooserCtrl
    {
       Stream.of(_btnReRunTimerRepeatsStop.getActionListeners()).forEach(al -> _btnReRunTimerRepeatsStop.removeActionListener(al));
    }
+
+   public void setEnabled(boolean b)
+   {
+      _btnChooser.setChooserEnabled(b);
+   }
 }

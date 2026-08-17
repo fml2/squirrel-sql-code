@@ -1,21 +1,16 @@
 package net.sourceforge.squirrel_sql.client.session.mcp.server;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 import net.sourceforge.squirrel_sql.client.Main;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.jsonobjects.McpNoArgs;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.jsonobjects.McpResultSet;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.jsonobjects.McpSimpleString;
-import net.sourceforge.squirrel_sql.fw.datasetviewer.ColumnDisplayDefinition;
-import net.sourceforge.squirrel_sql.fw.datasetviewer.DataSetException;
 import net.sourceforge.squirrel_sql.fw.datasetviewer.DataSetViewerTablePanel;
-import net.sourceforge.squirrel_sql.fw.datasetviewer.SimpleDataSet;
 import net.sourceforge.squirrel_sql.fw.util.JsonMarshalUtil;
 import net.sourceforge.squirrel_sql.fw.util.StringManager;
 import net.sourceforge.squirrel_sql.fw.util.StringManagerFactory;
-import net.sourceforge.squirrel_sql.fw.util.Utilities;
 import org.apache.commons.lang3.StringUtils;
 
 @SuppressWarnings("unchecked")
@@ -100,40 +95,23 @@ public enum McpCall
       return SIMPLE_DATE_FORMAT.format(new Date());
    }
 
-   public DataSetViewerTablePanel buildResultTableComponentForApproval(McpCallExecutor callExecutor)
+   public DataSetViewerTablePanel buildDataSetViewerTablePanelForApproval(McpCallExecutor callExecutor)
    {
-      try
+      switch(this)
       {
-
-         switch(this)
+         case getSessionName, getDriverClassName, getDriverName, getDriverVersion, getDatabaseProductName, getDatabaseProductVersion, getCurrentSchema ->
          {
-            case getSessionName, getDriverClassName, getDriverName, getDriverVersion, getDatabaseProductName, getDatabaseProductVersion, getCurrentSchema ->
-            {
-               return McpApprovalCallPreviewBuilder.createSingleMcpStringSetViewerTablePanel(callExecutor, this);
-            }
-            case getCatalogs, getSchemas, getTables, getPrimaryKeys, getImportedKeys, getExportedKeys, getIndexInfo, getColumns ->
-            {
-               return McpApprovalCallPreviewBuilder.createMcpResultSetDataSetViewerTablePanel(callExecutor, this);
-            }
-            case executeQuery ->
-            {
-               ColumnDisplayDefinition
-                     [] columnDisplayDefinitions = {new ColumnDisplayDefinition(200, this.name())};
-               ArrayList<Object[]> list = new ArrayList<>();
-               list.add(new Object[]{"TODO"});
-
-               SimpleDataSet simpleDataSet = new SimpleDataSet(list, columnDisplayDefinitions);
-               DataSetViewerTablePanel table = new DataSetViewerTablePanel();
-               table.init(null, null);
-               table.show(simpleDataSet);
-               return table;
-            }
-            default -> throw new IllegalStateException("Unknown McpCall " + this.name());
+            return McpApprovalCallPreviewBuilder.createSingleMcpStringSetViewerTablePanel(callExecutor, this);
          }
-      }
-      catch(DataSetException e)
-      {
-         throw Utilities.wrapRuntime(e);
+         case getCatalogs, getSchemas, getTables, getPrimaryKeys, getImportedKeys, getExportedKeys, getIndexInfo, getColumns ->
+         {
+            return McpApprovalCallPreviewBuilder.createMcpResultSetDataSetViewerTablePanel(callExecutor, this);
+         }
+         case executeQuery ->
+         {
+            throw new IllegalStateException("Call McpQueryExecuter.executeQueryForApproval for call " + executeQuery.name());
+         }
+         default -> throw new IllegalStateException("Unknown McpCall " + this.name());
       }
    }
 }

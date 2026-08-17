@@ -1,5 +1,7 @@
 package net.sourceforge.squirrel_sql.client.session.mcp.server.testclient;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -9,9 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.SquirrelMcpConstants;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.SquirrelMcpHttpServer;
 import net.sourceforge.squirrel_sql.client.session.mcp.server.jsonobjects.McpGetColumnsArgs;
@@ -63,15 +62,16 @@ public final class SquirrelMcpTestClient
       //client.print("tools/call getDriverName", client.getDriverName());
       //client.print("tools/call getDriverVersion", client.getDriverVersion());
       //client.print("tools/call getDatabaseProductName", client.getDatabaseProductName());
-      client.print("tools/call getDatabaseProductVersion", client.getDatabaseProductVersion());
+      //client.print("tools/call getDatabaseProductVersion", client.getDatabaseProductVersion());
 
-      //McpGetTablesArgs getTablesArgs = new McpGetTablesArgs(null, "SQLUser", "%", new String[]{"TABLE"});
+      //McpGetTablesArgs getTablesArgs = new McpGetTablesArgs(null, "public", "%", new String[]{"TABLE"});
       //client.print("tools/call getTables", client.getTables(getTablesArgs));
       //McpSimpleString sql = new McpSimpleString("select * from suppliers order by id");
-      //McpSimpleString sql = new McpSimpleString("select * from articles ORDER BY id");
-      //McpSimpleString sql = new McpSimpleString("SELECT * FROM SaraErsteTabelle");
+      McpSimpleString sql = new McpSimpleString("select * from articles ORDER BY id");
+      //McpSimpleString sql = new McpSimpleString("SELECT * FROM WArt");
+      //McpSimpleString sql = new McpSimpleString("UPDATE ygwaSQTest4 SET sqtesttest = 'Hallo'");
       //McpSimpleString sql = new McpSimpleString("INSERT INTO MCPTestTable(mcpid, mcpname) VALUES(2, 'Mcp2')");
-      //client.print("tools/call executeQuery", client.executeQuery(sql));
+      client.print("tools/call executeQuery", client.executeQuery(sql));
 
       //McpGetPrimaryKeysArgs primaryKeysArgs = new McpGetPrimaryKeysArgs(null, "public", "suppliers");
       //client.print("tools/call getTables", client.getPrimaryKeys(primaryKeysArgs));

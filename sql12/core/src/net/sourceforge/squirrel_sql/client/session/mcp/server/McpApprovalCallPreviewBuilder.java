@@ -17,9 +17,14 @@ public class McpApprovalCallPreviewBuilder
 {
    public static DataSetViewerTablePanel createSingleMcpStringSetViewerTablePanel(McpCallExecutor callExecutor, McpCall mcpCall)
    {
+      String stringContent = ((McpSimpleString) callExecutor.executeCall()).stringContent();
+      return createDataSetViewerTablePanelOfString(mcpCall, stringContent);
+   }
+
+   public static DataSetViewerTablePanel createDataSetViewerTablePanelOfString(McpCall mcpCall, String stringContent)
+   {
       try
       {
-         String stringContent = ((McpSimpleString) callExecutor.executeCall()).stringContent();
          ColumnDisplayDefinition[] columnDisplayDefinitions = {new ColumnDisplayDefinition(200, mcpCall.name())};
          ArrayList<Object[]> list = new ArrayList<>();
          list.add(new Object[]{stringContent});
@@ -42,6 +47,12 @@ public class McpApprovalCallPreviewBuilder
       try
       {
          McpResultSet mcpRes = callExecutor.executeCall();
+
+         if(StringUtils.isNotBlank(mcpRes.errorMessage()))
+         {
+            return createDataSetViewerTablePanelOfString(mcpCall, mcpRes.errorMessage());
+         }
+
          if( StringUtils.isBlank(mcpRes.errorMessage()) )
          {
             String errMsg = mcpRes.errorMessage();
@@ -89,4 +100,5 @@ public class McpApprovalCallPreviewBuilder
          throw Utilities.wrapRuntime(e);
       }
    }
+
 }

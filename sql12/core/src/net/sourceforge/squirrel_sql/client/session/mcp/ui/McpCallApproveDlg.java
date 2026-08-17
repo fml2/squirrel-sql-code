@@ -121,7 +121,7 @@ public class McpCallApproveDlg extends JDialog
       return ret;
    }
 
-   public void displayResult(JComponent comp)
+   public void displaySqlQueryExecutionUI(JComponent comp)
    {
       getContentPane().removeComponentListener(_disabledDividerLocationAdjustor);
       lowerSplitPanel.removeAll();
@@ -129,5 +129,16 @@ public class McpCallApproveDlg extends JDialog
       splitPane.setDividerSize(new JSplitPane().getDividerSize());
       splitPane.setDividerLocation(getContentPane().getHeight() / 2);
       btnRun.setEnabled(false);
+   }
+
+   public JComponent removeDisplayedSqlQueryExecutionUI()
+   {
+      if(1 == lowerSplitPanel.getComponentCount())
+      {
+         return (JComponent) lowerSplitPanel.getComponent(0);
+      }
+
+      return null;
+
    }
 }

@@ -16,7 +16,7 @@ import net.sourceforge.squirrel_sql.fw.util.StringManager;
 import net.sourceforge.squirrel_sql.fw.util.StringManagerFactory;
 import net.sourceforge.squirrel_sql.fw.util.StringUtilities;
 
-class CancelPanelCtrl
+public class CancelPanelCtrl
 {
    private static final StringManager s_stringMgr = StringManagerFactory.getStringManager(CancelPanelCtrl.class);
 
@@ -149,7 +149,7 @@ class CancelPanelCtrl
 
 
 
-   CancelPanel getPanel()
+   public CancelPanel getPanel()
    {
       return _panel;
    }

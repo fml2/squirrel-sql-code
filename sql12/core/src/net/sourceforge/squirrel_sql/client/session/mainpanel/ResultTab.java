@@ -52,6 +52,7 @@ import net.sourceforge.squirrel_sql.client.session.mainpanel.resulttabactions.Fi
 import net.sourceforge.squirrel_sql.client.session.mainpanel.resulttabactions.FindResultColumnAction;
 import net.sourceforge.squirrel_sql.client.session.mainpanel.resulttabactions.ReRunChooserCtrl;
 import net.sourceforge.squirrel_sql.client.session.mainpanel.rowcolandsum.RowColAndSumController;
+import net.sourceforge.squirrel_sql.client.session.mcp.ui.McpApproveResultTabDisbleHandler;
 import net.sourceforge.squirrel_sql.client.session.properties.SessionProperties;
 import net.sourceforge.squirrel_sql.fw.datasetviewer.BaseDataSetViewerDestination;
 import net.sourceforge.squirrel_sql.fw.datasetviewer.ContinueReadChannel;
@@ -140,6 +141,10 @@ public class ResultTab extends JPanel implements IHasIdentifier, IResultTab
 
    private ReRunChooserCtrl _reRunChooserCtrl;
    private RerunWithTimerRepeatsManager _rerunWithTimerRepeatsManager = new RerunWithTimerRepeatsManager();
+   private CloseAction _closeAction;
+   private CreateResultTabFrameAction _createResultTabFrameAction;
+
+   private McpApproveResultTabDisbleHandler _mcpApproveResultTabDisbleHandler = new McpApproveResultTabDisbleHandler();
 
    /**
     * Ctor.
@@ -621,7 +626,7 @@ public class ResultTab extends JPanel implements IHasIdentifier, IResultTab
       ret.add(_readMoreResultsHandler.getLoadingLabel(),gbc);
 
       gbc = new GridBagConstraints(1,0,1,1,0,0,GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(2,10,0,0), 0,0);
-      ret.add(_reRunChooserCtrl.getComponent(), gbc);
+      ret.add(_mcpApproveResultTabDisbleHandler.registerReRunChooser(_reRunChooserCtrl), gbc);
 
       _showCellDetailCtrl = new ShowCellDetailCtrl(this);
       gbc = new GridBagConstraints(2,0,1,1,0,0,GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(2,2,0,0), 0,0);
@@ -641,10 +646,10 @@ public class ResultTab extends JPanel implements IHasIdentifier, IResultTab
       ret.add(new TabButton(new FindInResultAction(this)), gbc);
 
       gbc = new GridBagConstraints(7,0,1,1,0,0,GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(2,2,0,0), 0,0);
-      ret.add(new TabButton(new CreateResultTabFrameAction(this)), gbc);
+      ret.add(_mcpApproveResultTabDisbleHandler.registerCreateResultFrameButton(new TabButton(new CreateResultTabFrameAction(this))), gbc);
 
       gbc = new GridBagConstraints(8,0,1,1,0,0,GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(2,2,0,2), 0,0);
-      ret.add(new TabButton(new CloseAction(this)), gbc);
+      ret.add(_mcpApproveResultTabDisbleHandler.registerCloseButton(new TabButton(new CloseAction(this))), gbc);
 
       gbc = new GridBagConstraints(0,1, GridBagConstraints.REMAINDER, 1,1,1,GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, new Insets(0,0,0,0), 0,0);
       ret.add(new JPanel(), gbc);
@@ -862,5 +867,15 @@ public class ResultTab extends JPanel implements IHasIdentifier, IResultTab
    public ResultSetDataSet getResultSetDataSetByReference()
    {
       return _rsds;
+   }
+
+   public void prepareMcpApproveDisplay()
+   {
+      _mcpApproveResultTabDisbleHandler.prepareMcpApproveDisplay();
+   }
+
+   public void unprepareMcpApproveDisplay()
+   {
+      _mcpApproveResultTabDisbleHandler.unprepareMcpApproveDisplay();
    }
 }

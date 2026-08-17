@@ -210,8 +210,7 @@ public final class SquirrelMcpToolsImpl implements SquirrelMcpTools
       McpCall call = McpCall.executeQuery;
       try
       {
-         McpCallExecutor mcpCallExecutor = new McpCallExecutor(call, () -> McpQueryExecuter.executeQuery(sql, _mcpServerContext));
-
+         McpCallExecutor mcpCallExecutor = McpCallExecutor.forExecuteQuery(sql, _mcpServerContext);
 
          CallApproval callApproval = _mcpServerContext.callStart(mcpCallExecutor, sql);
          if( false == callApproval.approved() )
@@ -219,10 +218,16 @@ public final class SquirrelMcpToolsImpl implements SquirrelMcpTools
             return call.createDisapprovedMsg(callApproval.userToAiDisapproveResponse());
          }
 
-         McpResultSet ret = mcpCallExecutor.executeCall();
+         if(false == mcpCallExecutor.hasCallResult())
+         {
+            mcpCallExecutor = new McpCallExecutor(call, () -> McpQueryExecuter.executeQuery(sql, _mcpServerContext));
+         }
+
+
+         McpExecuteQueryResult ret = mcpCallExecutor.executeCall();
          _mcpServerContext.callFinished(call);
 
-         return ret;
+         return ret.mcpResultSet();
       }
       catch(Exception e)
       {

@@ -1,6 +1,9 @@
 package net.sourceforge.squirrel_sql.client.session;
 
 import java.util.concurrent.CompletableFuture;
+
+import net.sourceforge.squirrel_sql.client.session.mainpanel.CancelPanelCtrl;
+import net.sourceforge.squirrel_sql.client.session.mainpanel.ErrorPanel;
 import net.sourceforge.squirrel_sql.client.session.mainpanel.ResultTab;
 import net.sourceforge.squirrel_sql.fw.util.log.ILogger;
 import net.sourceforge.squirrel_sql.fw.util.log.LoggerController;
@@ -18,6 +21,16 @@ public class SqlPanelExecutionFuture
    private String _lastExecutedStatement;
    private boolean _canceled;
    private String _updateMessage;
+   private SqlPanelExecutionFutureApprovalListener _sqlPanelExecutionFutureApprovalListener;
+
+   private SqlPanelExecutionFuture()
+   {
+   }
+
+   public SqlPanelExecutionFuture(SqlPanelExecutionFutureApprovalListener sqlPanelExecutionFutureApprovalListener)
+   {
+      _sqlPanelExecutionFutureApprovalListener = sqlPanelExecutionFutureApprovalListener;
+   }
 
    public SqlPanelExecutionResult waitForSqlResult()
    {
@@ -116,5 +129,20 @@ public class SqlPanelExecutionFuture
          _result.complete(null);
       }
 
+   }
+
+   public boolean isAddTabsToSQLPanelsResultTabbedPane()
+   {
+      return null == _sqlPanelExecutionFutureApprovalListener;
+   }
+
+   public void displayCancelPanelCtrl(CancelPanelCtrl cancelPanelCtrl)
+   {
+      _sqlPanelExecutionFutureApprovalListener.displayCancelPanelCtrl(cancelPanelCtrl);
+   }
+
+   public void displayErrorPanel(ErrorPanel errorPanel)
+   {
+      _sqlPanelExecutionFutureApprovalListener.displayErrorPanel(errorPanel);
    }
 }
