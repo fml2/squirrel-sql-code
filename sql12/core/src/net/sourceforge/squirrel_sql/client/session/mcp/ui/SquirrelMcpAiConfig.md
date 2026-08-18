@@ -11,7 +11,9 @@ connection of one open **SQuirreL Session**.
   server on its **own** TCP port. The Session UI shows that port; the user gives
   it to you.
 - Transport: **JSON-RPC 2.0 over HTTP POST** ("Streamable HTTP", non-streaming —
-  every request gets a single `application/json` response).
+  every request gets a single `application/json` response). Only `POST` is
+  accepted; `GET` returns `405`. The server is stateless (no `Mcp-Session-Id`).
+- MCP protocol version: `2025-06-18`.
 - Endpoint: `http://<host>:<PORT>/squirrel-sql-mcp`
   - `<host>` = `127.0.0.1` when SQuirreL runs on the **same machine** as you
     (the usual case; the server may even be bound to loopback only). If SQuirreL
@@ -26,11 +28,15 @@ dynamic, so ad-hoc HTTP calls are the right approach.
 
 - The server is **stateless**: you may call `tools/list` and `tools/call`
   directly. `initialize` is optional (only to read `serverInfo` / protocol version).
+- Implemented JSON-RPC methods: `initialize`, `ping`, `tools/list`, `tools/call`.
+  Anything else returns JSON-RPC error `-32601` (method not found).
 - Every request needs an `"id"`. A request without one is treated as a
   notification and answered with HTTP `202` and no body.
 - **Discover before you call:** run `tools/list` to get the current tools and
-  their JSON input schemas, then `tools/call`. Treat `tools/list` as the source
-  of truth — the tool set can grow, and each tool's exact argument fields are
+  their JSON input schemas, then `tools/call`. Treat `tools/list` as the single
+  source of truth — it is generated at runtime via reflection from the compiled
+  server code, so it (and only it) is guaranteed to match the server you are
+  talking to. The tool set can grow, and each tool's exact argument fields are
   defined there.
 
 ### Argument convention
@@ -68,7 +74,10 @@ rows. Simple string tools return `{ "stringContent": "..." }`.
 | `getDriverVersion` | none | `McpSimpleString` |
 | `getDatabaseProductName` | none | `McpSimpleString` |
 | `getDatabaseProductVersion` | none | `McpSimpleString` |
+| `getCurrentSchema` | none | `McpSimpleString` (current schema) |
 | `executeQuery` | `stringContent` (the SQL) | `McpResultSet` |
+| `getCatalogs` | none | `McpResultSet` |
+| `getSchemas` | none | `McpResultSet` |
 | `getTables` | `catalog?, schemaPattern?, tableNamePattern?, types?[]` | `McpResultSet` |
 | `getColumns` | `catalog?, schema?, table?` | `McpResultSet` |
 | `getPrimaryKeys` | `catalog?, schema?, table?` | `McpResultSet` |
@@ -146,15 +155,47 @@ curl -sS -X POST http://127.0.0.1:<PORT>/squirrel-sql-mcp \
   -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"executeQuery","arguments":{"stringContent":"SELECT * FROM CUSTOMERS ORDER BY ID"}}}'
 ```
 
+> **PowerShell note:** single quotes don't reliably protect the inner `"` when
+> calling `curl.exe`. Either backslash-escape every inner quote, or (more robust,
+> especially when arguments contain spaces) write the body to a UTF-8 **without
+> BOM** file and send it with `--data-binary "@file"`. On bash/Git Bash the
+> single-quoted forms above work as-is.
+
+## User approval — and what a disapproval means for you
+
+**The user controls access through SQuirreL.** A call may pop up an approval
+dialog in SQuirreL where the user inspects it (and may even preview its result)
+before deciding. Consequences for you:
+
+- A call may take a while to answer because it is waiting for the user's
+  decision. Be patient and keep issuing calls **sequentially** — the server
+  handles one call at a time anyway.
+- SQL may be restricted (e.g. to read-only); forbidden statements come back with
+  an `errorMessage`.
+- When the user **disapproves** a call, the result payload contains a message
+  stating that the call was not approved by the SQuirreL user. It arrives in
+  `errorMessage` for `McpResultSet` tools and in `stringContent` for simple
+  string tools — note that the JSON-RPC level `isError` flag may still be
+  `false`, so check the payload.
+- The user can optionally attach an **edited disapproval note addressed to you**
+  to that response. If such a note is present, read it and **respect it**: it
+  states why the call was declined and/or which constraints you must observe
+  from now on (for example, that certain data is off-limits to AI access).
+  Follow the note for the rest of the session, do not retry or try to circumvent
+  the refusal, and report the constraint to your user.
+
+## Session lifecycle
+
+- The server lives only while the SQuirreL Session (and its JDBC connection) is
+  open. Each session uses a **distinct port** — always use the one the user gave
+  you for *that* session.
+- After the session is closed the port stops answering, so a call simply fails
+  with connection-refused. There is nothing to clean up on your side — ask the
+  user to restart the MCP server (and for the new port) if that happens.
+
 ## Good behaviour
 
-- **The user controls access through SQuirreL.** Calls may require the user to
-  approve them in a SQuirreL dialog, and SQL may be restricted to read-only. If a
-  call is declined or blocked you will get an error / `errorMessage` — report it
-  and do not try to circumvent it.
-- The server serves **one call at a time**; issue calls sequentially.
-- The server lives only while the SQuirreL Session is open. Once the user closes
-  the session the port stops answering and calls fail with connection-refused —
-  ask the user to restart the MCP server (and for the new port) if that happens.
 - Prefer the metadata tools (`getTables`, `getColumns`, …) to inspect the schema
   before writing SQL, and quote identifiers as the target database requires.
+- Narrow every metadata request (see "Keep result sets small" above).
+- Issue calls one at a time; never fire calls in parallel against one session.

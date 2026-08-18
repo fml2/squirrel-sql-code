@@ -6,6 +6,14 @@ Not yet released, available in our GIT repository, snapshots and future releases
 
 Enhancements:
 
+Enhancements of SQuirreL-MCP to allow AI access:
+  (1) If users choose to approve AI calls the approve dialog now
+      allows them to execute the request and to check the data before it is returned to the AI.
+      This way the user can fully check all data the AI will ever receive.
+      See menu Session --> Configure and run MCP ... --> checkbox Approve AI calls.
+  (2) The approve dialog allows users to enter a disapproval note that is passed to the AI.
+      This way the AI can take this note into account in future requests.
+
 Code completion for WITH clauses and sub-selects:
   Alias names and columns are now available via code completion for aliases of WITH clauses and sub-selects.
 

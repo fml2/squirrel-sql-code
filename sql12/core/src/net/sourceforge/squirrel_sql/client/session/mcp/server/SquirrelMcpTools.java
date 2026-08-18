@@ -32,7 +32,7 @@ public interface SquirrelMcpTools
    @McpTool(description = "JDBC driver name")
    McpSimpleString getDriverName(McpNoArgs none);
 
-   @McpTool(description = "Database product version")
+   @McpTool(description = "JDBC driver version")
    McpSimpleString getDriverVersion(McpNoArgs none);
 
    @McpTool(description = "Database product name")
@@ -42,11 +42,11 @@ public interface SquirrelMcpTools
    McpSimpleString getDatabaseProductVersion(McpNoArgs none);
 
 
-   @McpTool(description = "Lists database tables (JDBC DatabaseMetaData.getTables).")
+   @McpTool(description = "Executes an SQL statement (query or update/DDL) on the Session's database connection.")
    McpResultSet executeQuery(@McpProp(description = "SQL to execute") McpSimpleString sql);
 
 
-   @McpTool(description = "Retrieves schemas (JDBC DatabaseMetaData.getSchemas).")
+   @McpTool(description = "Retrieves catalogs (JDBC DatabaseMetaData.getCatalogs).")
    McpResultSet getCatalogs(McpNoArgs none);
 
    @McpTool(description = "Retrieves schemas (JDBC DatabaseMetaData.getSchemas).")
