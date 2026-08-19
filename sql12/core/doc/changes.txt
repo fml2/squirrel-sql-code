@@ -65,6 +65,9 @@ https://github.com/squirrel-sql-client/squirrel-sql-code/issues/88
 
 Bug fixes:
 
+SQuirreL-MCP: Transporting a SQL-result from the MCPs approve-dialog to
+  the MCP-Panel's result pane raised NullPointerException.
+
 Compare function threw IllegalAccessError.
   The error at least occured on Windows 11 with Java 26.
 

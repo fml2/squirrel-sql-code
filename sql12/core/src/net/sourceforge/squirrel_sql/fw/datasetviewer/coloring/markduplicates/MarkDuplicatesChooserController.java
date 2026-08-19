@@ -190,6 +190,11 @@ public class MarkDuplicatesChooserController
 
    public void copyStateFrom(MarkDuplicatesChooserController controllerToCopyFrom)
    {
+      if(null == controllerToCopyFrom)
+      {
+         return;
+      }
+
       try
       {
          _dontReactToEvents = true;
