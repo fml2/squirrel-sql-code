@@ -21,4 +21,14 @@ With the restructuring of the build system came a new directory structure:
   * In case you want to work with the Look & Feel Plugin put the files contained in `<squirrel-git-root>/sql12/pluins/laf/` and `<squirrel-git-root>/sql12/pluins/skinlf-theme-packs/` in your classpath
   * SQuirreL's source code is in `<squirrel-git-root>/sql12/core/src/` and `<squirrel-git-root>/sql12/plugins/<plugin>/src/`
 
+### Deployment
 
+#### Scaling problems on high resolution screens:
+
+Set the JVM (Java Virtual Machine) parameter -Dsun.java2d.uiScale=<scaleValue>
+Example: -Dsun.java2d.uiScale=2.5
+This can be done by editing squirrel-sql.bat on Windows and squirrel-sql.sh on Linux/Unix or MacOS<br>
+or by setting the SQUIRREL_SQL_OPTS variable before executing the start script.
+
+An alternative approach was reported to be:
+You might need to add something like `export J2D_UISCALE=3.0` as the first command in `$HOME/squirrel-sql-$VERSION/squirrel-sql.sh` after installation if your display is small, otherwise the GUI will be microscopic!
