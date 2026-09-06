@@ -1,12 +1,15 @@
 package net.sourceforge.squirrel_sql.fw.datasetviewer.cellcomponent;
 
-import net.sourceforge.squirrel_sql.client.preferences.themes.ThemesEnum;
-import net.sourceforge.squirrel_sql.client.session.action.syntax.theme.SyntaxThemeFactory;
-import net.sourceforge.squirrel_sql.client.session.action.syntax.SyntaxKeyManager;
-import net.sourceforge.squirrel_sql.fw.util.StringUtilities;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-
 import java.awt.Color;
+import java.awt.Desktop;
+import javax.swing.event.HyperlinkEvent;
+import net.sourceforge.squirrel_sql.client.preferences.themes.ThemesEnum;
+import net.sourceforge.squirrel_sql.client.session.action.syntax.SyntaxKeyManager;
+import net.sourceforge.squirrel_sql.client.session.action.syntax.theme.SyntaxThemeFactory;
+import net.sourceforge.squirrel_sql.fw.util.StringUtilities;
+import net.sourceforge.squirrel_sql.fw.util.log.ILogger;
+import net.sourceforge.squirrel_sql.fw.util.log.LoggerController;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 
 /**
  * @author gwg
@@ -19,6 +22,9 @@ import java.awt.Color;
  */
 public class RestorableRSyntaxTextArea extends RSyntaxTextArea implements IRestorableTextComponent
 {
+   private final static ILogger s_log = LoggerController.createLogger(RestorableRSyntaxTextArea.class);
+
+
    /*
     * The original value set in this cell by the table
     */
@@ -29,12 +35,31 @@ public class RestorableRSyntaxTextArea extends RSyntaxTextArea implements IResto
    {
       setHighlightCurrentLine(false);
 
+      setHyperlinksEnabled(true);
+      addHyperlinkListener(e -> onhyperlinkUpdate(e));
+
       new SyntaxKeyManager(this);
 
       if( ThemesEnum.getCurrentTheme() == ThemesEnum.DARK )
       {
          setBackground(SyntaxThemeFactory.SYNTAX_DARK_THEME_BACKGROUND_COLOR);
          setForeground(Color.white);
+      }
+   }
+
+   private static void onhyperlinkUpdate(HyperlinkEvent e)
+   {
+      if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED && null != e.getURL())
+      {
+         Desktop desktop = Desktop.getDesktop();
+         try
+         {
+            desktop.browse(e.getURL().toURI());
+         }
+         catch (Exception exc)
+         {
+            s_log.error("Unexpected exception opening web browser:", exc);
+         }
       }
    }
 

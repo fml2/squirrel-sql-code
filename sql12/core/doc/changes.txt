@@ -6,6 +6,10 @@ Not yet released, available in our GIT repository, snapshots and future releases
 
 Enhancements:
 
+https://github.com/squirrel-sql-client/squirrel-sql-code/issues/95
+  Cell data dialog supports hyperlinks.
+  To open a hyperlink in the standard web browser press control and then click the hyperlink.
+
 Enhancements of SQuirreL-MCP to allow AI access:
   (1) If users choose to approve AI calls the approve dialog now
       allows them to execute the request and to check the data before it is returned to the AI.
